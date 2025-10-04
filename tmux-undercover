@@ -1,0 +1,14 @@
+#!/bin/bash
+
+undercover_x="bash"
+
+TMUX_UNDERCOVER_ORIGINAL_PREFIX_J="$(tmux list-keys -T prefix j)"
+if [ "$TMUX_UNDERCOVER_ORIGINAL_PREFIX_J" != "unknown key: J" ]; then
+	export TMUX_UNDERCOVER_ORIGINAL_PREFIX_J
+fi
+
+tmux bind-key -T prefix j send-keys j
+tmux bind-key -n j select-window -t fake
+
+tmux new-window -n fake "$undercover_x"
+

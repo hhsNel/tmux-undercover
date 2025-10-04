@@ -1,0 +1,11 @@
+#!/bin/bash
+
+tmux unbind-key -n j
+tmux unbind-key -T prefix j
+
+if [ -n "$TMUX_UNDERCOVER_ORIGINAL_PREFIX_J" ]; then
+  eval "tmux $TMUX_UNDERCOVER_ORIGINAL_PREFIX_J"
+fi
+
+tmux kill-window -t fake
+

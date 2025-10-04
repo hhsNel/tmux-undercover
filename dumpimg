@@ -1,0 +1,112 @@
+#!/bin/bash
+
+W3MIMGDISPLAY="/usr/lib/w3m/w3mimgdisplay"
+FONTW=6  # Approximate width of a terminal character
+FONTH=12 # Approximate height of a terminal character
+
+usage() {
+    echo "Usage: $0 [-x X_POS] [-y Y_POS] [-w WIDTH] [-h HEIGHT] <image_path>"
+    echo "Options:"
+    echo "  -x X_POS   X position of top-left corner (positive: from left, negative: from right, default: 0)"
+    echo "  -y Y_POS   Y position of top-left corner (positive: from top, negative: from bottom, default: 0)"
+    echo "  -w WIDTH   Display width in pixels (positive: absolute, negative: from terminal width)"
+    echo "  -h HEIGHT  Display height in pixels (positive: absolute, negative: from terminal height)"
+    exit 1
+}
+
+if [ -z "$1" ]; then
+    usage
+fi
+
+X_POS=0
+Y_POS=0
+WIDTH=""
+HEIGHT=""
+
+while getopts ":x:y:w:h:" opt; do
+    case $opt in
+        x) X_POS="$OPTARG" ;;
+        y) Y_POS="$OPTARG" ;;
+        w) WIDTH="$OPTARG" ;;
+        h) HEIGHT="$OPTARG" ;;
+        \?) echo "Invalid option: -$OPTARG" >&2; usage ;;
+        :) echo "Option -$OPTARG requires an argument." >&2; usage ;;
+    esac
+done
+
+shift $((OPTIND-1))
+
+if [ -z "$1" ]; then
+    usage
+fi
+
+FILENAME="$1"
+
+COLUMNS=$(tput cols)
+LINES=$(tput lines)
+
+TERM_WIDTH=$((FONTW * COLUMNS))
+TERM_HEIGHT=$((FONTH * (LINES - 2)))
+
+if [ -z "$WIDTH" ] || [ -z "$HEIGHT" ]; then
+    read -r ORIG_WIDTH ORIG_HEIGHT < <(echo "5;$FILENAME" | "$W3MIMGDISPLAY")
+fi
+
+MAX_WIDTH=$TERM_WIDTH
+MAX_HEIGHT=$TERM_HEIGHT
+
+if [ "$X_POS" -lt 0 ]; then
+    X_POS=$((TERM_WIDTH + X_POS))
+    [ "$X_POS" -lt 0 ] && X_POS=0
+fi
+
+if [ "$Y_POS" -lt 0 ]; then
+    Y_POS=$((TERM_HEIGHT + Y_POS))
+    [ "$Y_POS" -lt 0 ] && Y_POS=0
+fi
+
+if [ -n "$WIDTH" ]; then
+    if [ "$WIDTH" -le 0 ]; then
+        DISPLAY_WIDTH=$((TERM_WIDTH + WIDTH))
+        [ "$DISPLAY_WIDTH" -lt 0 ] && DISPLAY_WIDTH=0
+    else
+        DISPLAY_WIDTH=$WIDTH
+    fi
+else
+    DISPLAY_WIDTH=$ORIG_WIDTH
+fi
+
+if [ -n "$HEIGHT" ]; then
+    if [ "$HEIGHT" -le 0 ]; then
+        DISPLAY_HEIGHT=$((TERM_HEIGHT + HEIGHT))
+        [ "$DISPLAY_HEIGHT" -lt 0 ] && DISPLAY_HEIGHT=0
+    else
+        DISPLAY_HEIGHT=$HEIGHT
+    fi
+else
+    DISPLAY_HEIGHT=$ORIG_HEIGHT
+fi
+
+if [ "$DISPLAY_WIDTH" -gt "$MAX_WIDTH" ]; then
+    DISPLAY_HEIGHT=$((DISPLAY_HEIGHT * MAX_WIDTH / DISPLAY_WIDTH))
+    DISPLAY_WIDTH=$MAX_WIDTH
+fi
+
+if [ "$DISPLAY_HEIGHT" -gt "$MAX_HEIGHT" ]; then
+    DISPLAY_WIDTH=$((DISPLAY_WIDTH * MAX_HEIGHT / DISPLAY_HEIGHT))
+    DISPLAY_HEIGHT=$MAX_HEIGHT
+fi
+
+if [ $((X_POS + DISPLAY_WIDTH)) -gt "$TERM_WIDTH" ]; then
+    X_POS=$((TERM_WIDTH - DISPLAY_WIDTH))
+    [ "$X_POS" -lt 0 ] && X_POS=0
+fi
+
+if [ $((Y_POS + DISPLAY_HEIGHT)) -gt "$TERM_HEIGHT" ]; then
+    Y_POS=$((TERM_HEIGHT - DISPLAY_HEIGHT))
+    [ "$Y_POS" -lt 0 ] && Y_POS=0
+fi
+
+W3M_COMMAND="0;1;$X_POS;$Y_POS;$DISPLAY_WIDTH;$DISPLAY_HEIGHT;;;;;$FILENAME\n4;\n3;"
+
+echo -e "$W3M_COMMAND" | "$W3MIMGDISPLAY"
