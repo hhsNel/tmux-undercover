@@ -1,2 +1,4 @@
-./dumpimg -x 0 -y 0 -w 0 -h 0 ./bscode.png
+clear
+./termdumpimg -x 0 -y 0 -w 0 -h 0 ./bscode.png
 ./pty-shell -x 25 -w 184 -y 12 -h 40
+clear
