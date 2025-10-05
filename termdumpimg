@@ -12,6 +12,7 @@ usage() {
     echo "  -w WIDTH   Display width in pixels (positive: absolute, negative: from terminal width)"
     echo "  -h HEIGHT  Display height in pixels (positive: absolute, negative: from terminal height)"
 	echo "  -s         Allow stretching if exceeding terminal dimensions"
+	echo "  -m         Prevent the image from being moved to fit in the terminal, if it would be rendered outside"
     exit 1
 }
 
@@ -24,14 +25,16 @@ Y_POS=0
 WIDTH=""
 HEIGHT=""
 NO_SCALE=0
+NO_MOVE=0
 
-while getopts ":x:y:w:h:s" opt; do
+while getopts "x:y:w:h:sm" opt; do
     case $opt in
         x) X_POS="$OPTARG" ;;
         y) Y_POS="$OPTARG" ;;
         w) WIDTH="$OPTARG" ;;
         h) HEIGHT="$OPTARG" ;;
 		s) NO_SCALE=1 ;;
+		m) NO_MOVE=1 ;;
         \?) echo "Invalid option: -$OPTARG" >&2; usage ;;
         :) echo "Option -$OPTARG requires an argument." >&2; usage ;;
     esac
@@ -49,7 +52,7 @@ COLUMNS=$(tput cols)
 LINES=$(tput lines)
 
 TERM_WIDTH=$((FONTW * COLUMNS))
-TERM_HEIGHT=$((FONTH * (LINES - 2)))
+TERM_HEIGHT=$((FONTH * LINES))
 
 if [ -z "$WIDTH" ] || [ -z "$HEIGHT" ]; then
     read -r ORIG_WIDTH ORIG_HEIGHT < <(echo "5;$FILENAME" | "$W3MIMGDISPLAY")
@@ -102,14 +105,16 @@ if [ "$NO_SCALE" -eq 0 ]; then
 	fi
 fi
 
-if [ $((X_POS + DISPLAY_WIDTH)) -gt "$TERM_WIDTH" ]; then
-    X_POS=$((TERM_WIDTH - DISPLAY_WIDTH))
-    [ "$X_POS" -lt 0 ] && X_POS=0
-fi
-
-if [ $((Y_POS + DISPLAY_HEIGHT)) -gt "$TERM_HEIGHT" ]; then
-    Y_POS=$((TERM_HEIGHT - DISPLAY_HEIGHT))
-    [ "$Y_POS" -lt 0 ] && Y_POS=0
+if [ "$NO_MOVE" -eq 0 ]; then
+	if [ $((X_POS + DISPLAY_WIDTH)) -gt "$TERM_WIDTH" ]; then
+	    X_POS=$((TERM_WIDTH - DISPLAY_WIDTH))
+	    [ "$X_POS" -lt 0 ] && X_POS=0
+	fi
+	
+	if [ $((Y_POS + DISPLAY_HEIGHT)) -gt "$TERM_HEIGHT" ]; then
+	    Y_POS=$((TERM_HEIGHT - DISPLAY_HEIGHT))
+	    [ "$Y_POS" -lt 0 ] && Y_POS=0
+	fi
 fi
 
 W3M_COMMAND="0;1;$X_POS;$Y_POS;$DISPLAY_WIDTH;$DISPLAY_HEIGHT;;;;;$FILENAME\n4;\n3;"
