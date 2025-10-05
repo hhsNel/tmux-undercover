@@ -1,14 +1,19 @@
 #!/bin/bash
 
-UNDERCOVER_X="windowslike.sh"
+undercover_x="windowslike"
+dir_name="tmux-undercover"
+pj_file="prefix-j"
 
-TMUX_UNDERCOVER_ORIGINAL_PREFIX_J="$(tmux list-keys -T prefix j)"
-if [ "$TMUX_UNDERCOVER_ORIGINAL_PREFIX_J" != "unknown key: J" ]; then
-	export TMUX_UNDERCOVER_ORIGINAL_PREFIX_J
+data_path="${XDG_DATA_HOME:-$HOME/.local/share}"
+dir_path="$data_path/$dir_name"
+mkdir -p "$dir_path"
+
+pj_path="$dir_path/$pj_file"
+tmux_original_prefix_j="$(tmux list-keys -T prefix j)"
+if [ "$tmux_original_prefix_j" != "unknown key: J" ]; then
+	echo "$tmux_original_prefix_j" > "$pj_path"
 fi
 
 tmux bind-key -T prefix j send-keys j
-tmux bind-key -n j select-window -t fake
-
-tmux new-window -n fake "$UNDERCOVER_X"
+tmux bind-key -n j new-window -n fake "$undercover_x"
 
