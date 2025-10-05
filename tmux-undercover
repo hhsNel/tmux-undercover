@@ -1,6 +1,6 @@
 #!/bin/bash
 
-undercover_x="bash"
+undercover_x="windowslike.sh"
 
 TMUX_UNDERCOVER_ORIGINAL_PREFIX_J="$(tmux list-keys -T prefix j)"
 if [ "$TMUX_UNDERCOVER_ORIGINAL_PREFIX_J" != "unknown key: J" ]; then
