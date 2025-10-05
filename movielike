@@ -1,0 +1,9 @@
+#!/bin/bash
+
+clear
+tmux set -g status off
+termdumpimg -x 0 -y 0 -w 0 -h 0 /usr/local/share/tmux-undercover/thematrix.png
+pty-shell -x 20 -y 4 -w 58 -h 25
+tmux set -g status on
+clear
+

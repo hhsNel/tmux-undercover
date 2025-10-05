@@ -5,7 +5,7 @@ FONTW=6  # Approximate width of a terminal character
 FONTH=12 # Approximate height of a terminal character
 
 usage() {
-    echo "Usage: $0 [-x X_POS] [-y Y_POS] [-w WIDTH] [-h HEIGHT] [-s] <image_path>"
+    echo "Usage: $0 [-x X_POS] [-y Y_POS] [-w WIDTH] [-h HEIGHT] [-s] [-m] <image_path>"
     echo "Options:"
     echo "  -x X_POS   X position of top-left corner (positive: from left, negative: from right, default: 0)"
     echo "  -y Y_POS   Y position of top-left corner (positive: from top, negative: from bottom, default: 0)"

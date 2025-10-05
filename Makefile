@@ -1,4 +1,5 @@
-FILES = pty-shell termdumpimg tmux-undercover windowslike
+FILES = pty-shell termdumpimg tmux-undercover windowslike memelike movielike
+IMGS = bscode.png meme.png thematrix.png
 INSDIR = /usr/local/bin
 IMGDIR = /usr/local/share/tmux-undercover
 
@@ -17,8 +18,10 @@ install: $(FILES)
 		chmod +rx "$(INSDIR)/$$file"; \
 	done
 	mkdir -p $(IMGDIR)
-	cp bscode.png $(IMGDIR)
-	chmod +r "$(IMGDIR)/bscode.png"
+	cp $(IMGS) $(IMGDIR)
+	for file in $(IMGS); do \
+		chmod +r "$(IMGDIR)/$$file"; \
+	done
 
 uninstall:
 	for file in $(FILES); do \
@@ -26,5 +29,7 @@ uninstall:
 	done
 	rm -rf $(IMGDIR)
 
-.PHONY: all clean install uninstall
+reinstall: uninstall install
+
+.PHONY: all clean install uninstall reinstall
 
