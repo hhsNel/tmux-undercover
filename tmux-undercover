@@ -2,18 +2,72 @@
 
 undercover_x="windowslike"
 dir_name="tmux-undercover"
-pj_file="prefix-j"
-
 data_path="${XDG_DATA_HOME:-$HOME/.local/share}"
 dir_path="$data_path/$dir_name"
-mkdir -p "$dir_path"
+key="j"
+quit=""
+quit_all=""
+list=""
 
-pj_path="$dir_path/$pj_file"
-tmux_original_prefix_j="$(tmux list-keys -T prefix j)"
-if [ "$tmux_original_prefix_j" != "unknown key: J" ]; then
-	echo "$tmux_original_prefix_j" > "$pj_path"
+while getopts "qQlx:k:" opt; do
+    case $opt in
+        q) quit=1 ;;
+        Q) quit_all=1 ;;
+		l) list=1 ;;
+        x) undercover_x="$OPTARG" ;;
+        k) key="$OPTARG" ;;
+        \?) echo "Invalid option: -$OPTARG" >&2; exit 1 ;;
+    esac
+done
+
+if [ -n "$list" ]; then
+	printf "%-10s %-20s %-50s\n" "Key" "Undercover Command" "Original Binding"
+	printf "%s\n" "------------------------------------------------------------"
+    for pk_path in "$dir_path"/prefix-*; do
+        if [ -f "$pk_path" ]; then
+			current_key="${pk_path##*-}"
+			tmux_binding=$(tmux lsk -T prefix "$current_key" 2>/dev/null | grep "$current_key" | awk '{print $0}' || echo "No current binding")
+			undercover_cmd=$(tmux lsk -T root "$current_key" | awk '{print $NF}' || echo "Not set")
+			original_binding=$(<"$pk_path")
+			printf "%-10s %-20s %-50s\n" "$current_key" "$undercover_cmd" "$original_binding"
+		fi
+	done
+elif [ -n "$quit_all" ]; then
+    mkdir -p "$dir_path"
+    for pk_path in "$dir_path"/prefix-*; do
+        if [ -f "$pk_path" ]; then
+            current_key="${pk_path##*-}"
+            tmux unbind-key -n "$current_key" 2>/dev/null
+            tmux unbind-key -T prefix "$current_key" 2>/dev/null
+            pk=$(<"$pk_path")
+            if [[ "$pk" == bind-key* ]]; then
+                eval "tmux $pk"
+            fi
+            rm "$pk_path"
+        fi
+    done
+elif [ -n "$quit" ]; then
+    pk_path="$dir_path/prefix-$key"
+    if [ ! -f "$pk_path" ]; then
+        echo "Not set for key $key"
+        exit 1
+    fi
+    tmux unbind-key -n "$key" 2>/dev/null
+    tmux unbind-key -T prefix "$key" 2>/dev/null
+    pk=$(<"$pk_path")
+    if [[ "$pk" == bind-key* ]]; then
+        eval "tmux $pk"
+    fi
+    rm "$pk_path"
+else
+    mkdir -p "$dir_path"
+    pk_path="$dir_path/prefix-$key"
+    if [ -f "$pk_path" ]; then
+        echo "Already set for key $key, not overwriting."
+        exit 1
+    fi
+    tmux_original=$(tmux list-keys -T prefix "$key" 2>&1)
+    echo "$tmux_original" > "$pk_path"
+    tmux bind-key -T prefix "$key" send-keys "$key"
+    tmux bind-key -n "$key" new-window -n fake "$undercover_x"
 fi
-
-tmux bind-key -T prefix j send-keys j
-tmux bind-key -n j new-window -n fake "$undercover_x"
-
