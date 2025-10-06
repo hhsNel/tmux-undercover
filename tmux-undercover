@@ -1,16 +1,21 @@
 #!/bin/bash
 
-undercover_x="windowslike"
 dir_name="tmux-undercover"
 data_path="${XDG_DATA_HOME:-$HOME/.local/share}"
 dir_path="$data_path/$dir_name"
-key="j"
+default_key="j"
+default_undercover_x="windowslike"
+
+key="$default_key"
+undercover_x="$default_undercover_x"
+usage=""
 quit=""
 quit_all=""
 list=""
 
-while getopts "qQlx:k:" opt; do
+while getopts "hqQlx:k:" opt; do
     case $opt in
+		h) usage=1 ;;
         q) quit=1 ;;
         Q) quit_all=1 ;;
 		l) list=1 ;;
@@ -20,7 +25,18 @@ while getopts "qQlx:k:" opt; do
     esac
 done
 
-if [ -n "$list" ]; then
+if [ -n "$usage" ]; then
+	echo "Usage: $0 [-h] [-q] [-Q] [-l] [-x UNDERCOVER_X] [-k KEY]"
+	echo "Options:"
+	echo "  -h                 Print this help, then exit"
+	echo "  -q                 Remove undercover keybind KEY"
+	echo "  -Q                 Remove all undercover keybinds"
+	echo "  -l                 List all currently enabled undercover keybinds"
+	echo "  -x UNDERCOVER_X    Set UNDERCOVER_X to UNDERCOVER_X. Default UNDERCOVER_X=\"$default_undercover_x\""
+	echo "  -k KEY             Set KEY to KEY. Default KEY=\"$default_key\""
+	echo "  default (no hqQl)  Create an undercover keubind on key KEY that executes UNDERCOVER_X"
+	exit 1
+elif [ -n "$list" ]; then
 	printf "%-10s %-20s %-50s\n" "Key" "Undercover Command" "Original Binding"
 	printf "%s\n" "------------------------------------------------------------"
     for pk_path in "$dir_path"/prefix-*; do
