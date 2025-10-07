@@ -887,7 +887,18 @@ process_input(int master, PTYState *state)
 				case CSI:
 					csi_buff[csi_index++] = ch;
 					if(ch >= '0' && ch <= '9') {
-						param_val = param_val * 10 + ch - '0';
+						param_val *= 10;
+						param_val += ch - '0';
+					} else if(ch == ';') {
+						if(param_count < MAX_PARAMS) {
+							params[param_count++] = param_val;
+						}
+						param_val = 0;
+						break;
+					} else if(ch == '?') {
+						private_param = '?';
+						csi_buff[--csi_index] = 0;
+						break;
 					} else if(ch >= 0x30 && ch <= 0x3f) {
 						/* ignore */
 					} else if(ch >= 0x20 && ch <= 0x2f) {
@@ -932,19 +943,6 @@ process_input(int master, PTYState *state)
 							}
 							putchar(final_char);
 							fflush(stdout);
-						}
-					} else {
-						switch(ch) {
-						case ';':
-							if(param_count < MAX_PARAMS) {
-								params[param_count++] = param_val;
-							}
-							param_val = 0;
-							break;
-						case '?':
-							private_param = '?';
-							csi_buff[--csi_index] = 0;
-							break;
 						}
 					}
 				}
